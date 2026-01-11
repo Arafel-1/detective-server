@@ -1,0 +1,162 @@
+/* Estilos Lobby Multijugador */
+.lobby-content {
+    max-width: 450px;
+    width: 90%;
+    background: linear-gradient(135deg, #1e1e2f 0%, #2a1b3d 100%);
+    max-height: 85vh;
+    /* Evitar que sea más alto que la pantalla */
+    overflow-y: auto;
+    /* Scroll si es necesario */
+    display: flex;
+    flex-direction: column;
+    border-radius: 12px;
+    /* Asegurar bordes redondeados */
+}
+
+.lobby-body {
+    padding: 15px;
+    /* Reducir padding */
+}
+
+.lobby-section {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 20px;
+    border-radius: 10px;
+    margin-bottom: 15px;
+    text-align: center;
+}
+
+.lobby-section h4 {
+    color: #f093fb;
+    margin-bottom: 10px;
+}
+
+.lobby-section p {
+    font-size: 0.9rem;
+    color: #ccc;
+    margin-bottom: 15px;
+}
+
+.lobby-input {
+    width: 100%;
+    padding: 12px;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    color: white;
+    font-size: 1.1rem;
+    text-align: center;
+    margin-bottom: 15px;
+}
+
+.lobby-input:focus {
+    border-color: #f093fb;
+    outline: none;
+}
+
+.lobby-divider {
+    text-align: center;
+    margin: 15px 0;
+    color: rgba(255, 255, 255, 0.3);
+    font-weight: bold;
+    position: relative;
+}
+
+.lobby-divider::before,
+.lobby-divider::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    width: 45%;
+    height: 1px;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.lobby-divider::before {
+    left: 0;
+}
+
+.lobby-divider::after {
+    right: 0;
+}
+
+.full-width {
+    width: 100%;
+}
+
+/* Status Indicator */
+/* Status Indicator */
+.connection-status {
+    position: fixed;
+    bottom: 20px;
+    /* Movido a abajo */
+    left: 20px;
+    /* Movido a la izquierda */
+    background: rgba(0, 0, 0, 0.6);
+    padding: 8px 15px;
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border: 1px solid rgba(74, 222, 128, 0.3);
+    z-index: 10000;
+    /* Aumentado por si acaso */
+    animation: fadeIn 0.5s;
+    font-size: 0.9rem;
+    pointer-events: none;
+    /* Para que no bloquee clicks si se solapa con algo */
+}
+
+/* Ajuste para pantallas pequeñas */
+@media (max-width: 600px) {
+    .connection-status {
+        bottom: 15px;
+        left: 15px;
+        padding: 5px 12px;
+        font-size: 0.8rem;
+        background: rgba(0, 0, 0, 0.8);
+    }
+}
+
+.status-dot {
+    width: 10px;
+    height: 10px;
+    background-color: #4ade80;
+    border-radius: 50%;
+    box-shadow: 0 0 10px #4ade80;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.5;
+    }
+
+    100% {
+        opacity: 1;
+    }
+}
+
+/* Loader simple */
+.loader {
+    border: 3px solid rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+    border-top: 3px solid #f093fb;
+    width: 30px;
+    height: 30px;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
