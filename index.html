@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enigma Files - Juego de Misterio</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/notes.css">
+    <link rel="stylesheet" href="css/evaluation.css">
+    <link rel="stylesheet" href="css/multiplayer.css">
+    <!-- QR Code Lib -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <!-- PDF.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+</head>
+
+<body>
+    <div class="app-container">
+        <!-- Pantalla de inicio -->
+        <div id="home-screen" class="screen active">
+            <div class="logo-container">
+                <h1 class="game-title">🔍 Enigma Files</h1>
+                <p class="game-subtitle">Resuelve el misterio</p>
+            </div>
+            <div class="home-buttons">
+                <button class="btn-primary" id="start-button">Comenzar</button>
+                <button id="multiplayer-btn" class="btn-secondary">🌐 Multijugador</button>
+                <button class="btn-secondary" id="settings-button">⚙️ Ajustes</button>
+            </div>
+        </div>
+
+        <!-- Pantalla de ajustes -->
+        <div id="settings-screen" class="screen">
+            <div class="header">
+                <button class="btn-back" id="back-to-home-from-settings">← Volver</button>
+                <h2>Ajustes</h2>
+            </div>
+            <div class="settings-content">
+                <h3>📡 Conexión con el Servidor (PC Host)</h3>
+                <p style="font-size: 0.9rem; color: #aaa; margin-bottom: 15px;">
+                    Si estás en la App Móvil, escribe aquí la IP de tu PC (ej: http://192.168.1.15:3000).
+                    Déjalo vacío si juegas en la PC.
+                </p>
+                <div class="form-group" id="server-config-group">
+                    <input type="text" id="server-url-input" class="lobby-input"
+                        placeholder="Ej: http://192.168.1.5:3000">
+                </div>
+                <button id="save-settings-btn" class="btn-primary full-width" style="margin-top: 10px;">Guardar
+                    Configuración</button>
+                <p id="settings-status" style="margin-top: 10px; font-size: 0.9rem;"></p>
+            </div>
+        </div>
+
+        <!-- Selección de casos -->
+        <div id="case-selection-screen" class="screen">
+            <div class="header">
+                <button class="btn-back" id="back-to-home">← Volver</button>
+                <h2>Selecciona un Caso</h2>
+            </div>
+            <div id="cases-container" class="cases-grid">
+                <!-- Los casos se cargarán dinámicamente -->
+            </div>
+        </div>
+
+        <!-- Pantalla del caso -->
+        <div id="case-screen" class="screen">
+            <div class="header">
+                <button class="btn-back" id="back-to-cases">← Casos</button>
+                <h2 id="case-title">Caso</h2>
+            </div>
+
+            <div class="case-content">
+                <div class="tabs" id="tabs-container">
+                    <button class="tab active" data-tab="pistas">Pistas</button>
+                    <button class="tab" data-tab="declaraciones">Declaraciones</button>
+                    <button class="tab" data-tab="forense">Forense</button>
+                    <button class="tab" data-tab="policial">Reporte</button>
+                    <button class="tab" data-tab="finales" id="tab-finales" style="display: none;">📂 Archivos
+                        Finales</button>
+                </div>
+
+                <div id="documents-container" class="documents-container">
+                    <!-- Los documentos se cargarán aquí -->
+                </div>
+
+                <button class="btn-solve" id="solve-button">Resolver Caso</button>
+            </div>
+        </div>
+
+        <!-- Pantalla de resolución -->
+        <div id="solution-screen" class="screen">
+            <div class="header">
+                <button class="btn-back" id="back-to-case">← Volver</button>
+                <h2>Resolución del Caso</h2>
+            </div>
+            <div id="solution-container" class="solution-container">
+                <!-- La resolución se cargará aquí -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Botón flotante para abrir notas -->
+    <button id="notes-toggle-btn" class="notes-toggle-btn" title="Abrir Notas">
+        📝
+    </button>
+
+    <!-- Panel de Notas -->
+    <div id="notes-panel" class="notes-panel">
+        <div class="notes-header">
+            <h3>📋 Notas del Caso</h3>
+            <button id="notes-close-btn" class="notes-close-btn">✕</button>
+        </div>
+
+        <div class="notes-tabs">
+            <button class="notes-tab active" data-category="sospechosos">🕵️ Sospechosos</button>
+            <button class="notes-tab" data-category="pistas">🔍 Pistas</button>
+            <button class="notes-tab" data-category="teorias">💡 Teorías</button>
+            <button class="notes-tab" data-category="cronologia">⏰ Cronología</button>
+            <button class="notes-tab" data-category="general">📝 General</button>
+        </div>
+
+        <div class="notes-content">
+            <!-- Área de contenido dinámico (se generan textareas por jugador) -->
+            <div id="notes-content-area" class="notes-content">
+                <!-- Se inyecta vía JS -->
+            </div>
+
+            <!-- (El textarea único se elimina) -->
+        </div>
+
+        <div class="notes-footer">
+            <button id="notes-clear-btn" class="notes-btn-secondary">🗑️ Limpiar</button>
+            <span class="notes-autosave">Guardado automático</span>
+        </div>
+    </div>
+
+    <!-- Modal para visor de PDF -->
+    <div id="pdf-modal" class="pdf-modal">
+        <div class="pdf-modal-content">
+            <div class="pdf-modal-header">
+                <h3 id="pdf-title">Documento</h3>
+                <button class="pdf-close" id="pdf-close-btn">✕</button>
+            </div>
+            <div class="pdf-controls">
+                <button id="pdf-prev" class="pdf-nav-btn">← Anterior</button>
+                <span id="pdf-page-info">Página 1 de 1</span>
+                <button id="pdf-next" class="pdf-nav-btn">Siguiente →</button>
+            </div>
+            <div class="pdf-viewer-container">
+                <canvas id="pdf-canvas"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Resolución -->
+    <div id="resolution-modal" class="pdf-modal">
+        <div class="pdf-modal-content resolution-content">
+            <div class="pdf-modal-header">
+                <h3>🕵️ Resolver Caso</h3>
+                <button class="pdf-close" id="resolution-close-btn">✕</button>
+            </div>
+
+            <div class="resolution-body">
+                <form id="resolution-form">
+                    <div class="form-group">
+                        <label>👤 ¿Quién es el asesino?</label>
+                        <select id="culprit-select" required>
+                            <option value="">Selecciona un sospechoso...</option>
+                            <!-- Se llenará dinámicamente -->
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>🔪 ¿Cuál fue el motivo?</label>
+                        <textarea id="motive-input" placeholder="Explica por qué lo hizo..." required></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label>🔧 ¿Cómo lo hizo? (Método)</label>
+                        <div id="method-options" class="checkbox-group">
+                            <!-- Se llenará dinámicamente -->
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>🔑 Evidencias Clave (Selecciona 3)</label>
+                        <div id="evidence-options" class="checkbox-group">
+                            <!-- Se llenará dinámicamente -->
+                        </div>
+                    </div>
+
+                    <div class="form-submit">
+                        <button type="submit" class="btn-primary">Enviar Resolución</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Resultados -->
+    <div id="results-modal" class="pdf-modal">
+        <div class="pdf-modal-content results-content">
+            <div class="results-header">
+                <h2 id="final-score">0</h2>
+                <p>Puntos Totales</p>
+            </div>
+            <div class="results-rank">
+                <span id="rank-badge">🏆</span>
+                <h3 id="rank-title">Detective</h3>
+            </div>
+
+            <div class="results-breakdown">
+                <div class="result-item" id="res-culprit">
+                    <span>Culpable</span>
+                    <span class="score-value">+0</span>
+                </div>
+                <div class="result-item" id="res-motive">
+                    <span>Motivo</span>
+                    <span class="score-value">+0</span>
+                </div>
+                <div class="result-item" id="res-method">
+                    <span>Método</span>
+                    <span class="score-value">+0</span>
+                </div>
+                <div class="result-item" id="res-evidence">
+                    <span>Evidencias</span>
+                    <span class="score-value">+0</span>
+                </div>
+            </div>
+
+            <div class="results-actions">
+                <button class="btn-primary" onclick="showSolutionDocuments()">Ver Archivos Finales</button>
+                <button class="btn-secondary" onclick="closeResults()">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Botón de estado de conexión -->
+    <div id="connection-status" class="connection-status" style="display: none;">
+        <span class="status-dot"></span>
+        <span id="room-display">Sala: ----</span>
+    </div>
+
+    <!-- Modal de Lobby Multijugador -->
+    <div id="lobby-modal" class="pdf-modal">
+        <div class="pdf-modal-content lobby-content">
+            <div class="pdf-modal-header">
+                <h3>🌐 Conexión de Detectives</h3>
+                <button class="pdf-close" id="lobby-close-btn">✕</button>
+            </div>
+
+            <div class="lobby-body">
+                <div class="form-group">
+                    <label>Tu Nombre de Detective</label>
+                    <input type="text" id="player-name-input" class="lobby-input" placeholder="Ej. Sherlock">
+                </div>
+
+                <div class="lobby-section">
+                    <h4>Crear Nueva Investigación</h4>
+                    <p>Elige el caso y crea la sala.</p>
+
+                    <div class="form-group">
+                        <select id="lobby-case-select" class="lobby-input">
+                            <!-- Se llena dinámicamente -->
+                        </select>
+                    </div>
+
+                    <button id="create-room-btn" class="btn-primary full-width">Crear Sala</button>
+
+                    <!-- Área de QR (Oculta inicialmente) -->
+                    <div id="host-info"
+                        style="display: none; margin-top: 15px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px;">
+                        <p style="color: #4ade80; font-weight: bold;">¡Sala Activa!</p>
+                        <div id="qrcode"
+                            style="display: flex; justify-content: center; margin: 10px auto; background: white; padding: 10px; width: fit-content; border-radius: 8px;">
+                        </div>
+
+                        <div
+                            style="background: rgba(0,0,0,0.3); padding: 8px; border-radius: 5px; margin-top: 10px; margin-bottom: 15px;">
+                            CÓDIGO: <strong id="room-code-display"
+                                style="color: #f093fb; font-size: 1.2rem;">----</strong>
+                        </div>
+
+                        <button id="start-game-btn" class="btn-primary full-width"
+                            style="background: linear-gradient(135deg, #42e695 0%, #3bb2b8 100%);">🚀 INICIAR
+                            PARTIDA</button>
+                        <p style="font-size: 0.8rem; margin-top: 10px; color: #aaa;">Espera a que se unan los jugadores
+                            antes de iniciar.</p>
+                    </div>
+
+                    <!-- Área de Espera para Invitados -->
+                    <div id="guest-waiting" style="display: none; text-align: center; margin-top: 20px;">
+                        <div style="font-size: 3rem; margin-bottom: 10px;">⏳</div>
+                        <h3 style="color: #f093fb;">Esperando al Anfitrión</h3>
+                        <p style="color: #ccc; margin-bottom: 15px;">Estás en la sala <strong id="guest-room-code"
+                                style="color: #fff;">----</strong></p>
+                        <div class="loader" style="margin: 0 auto;"></div>
+                        <p style="font-size: 0.8rem; color: #888; margin-top: 15px;">El juego comenzará automáticamente
+                            cuando el líder lo inicie.</p>
+                    </div>
+                </div>
+
+                <div class="lobby-divider">O</div>
+
+                <div class="lobby-section">
+                    <h4>Unirse a Investigación</h4>
+                    <input type="text" id="room-code-input" class="lobby-input" placeholder="CÓDIGO DE SALA"
+                        style="text-transform: uppercase;">
+                    <button id="join-room-btn" class="btn-secondary full-width">Unirse</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/config.js"></script>
+    <script src="js/app.js"></script>
+    <script src="js/notes.js"></script>
+    <script src="js/evaluation.js"></script>
+    <script src="js/multiplayer.js"></script>
+</body>
+
+</html>
