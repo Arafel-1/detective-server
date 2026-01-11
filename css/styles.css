@@ -452,3 +452,64 @@ body {
         gap: 10px;
     }
 }
+
+/* Acciones de la tarjeta de caso (Dinámico) */
+.case-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.status-icon {
+    font-size: 1.2rem;
+    cursor: help;
+}
+
+.case-actions {
+    margin-top: 15px;
+    display: flex;
+    gap: 10px;
+}
+
+.play-btn {
+    flex: 1;
+    background: #4ade80;
+    color: #1a1a2e;
+    border: none;
+    padding: 8px;
+    border-radius: 5px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.play-btn:hover {
+    background: #22c55e;
+}
+
+.download-btn {
+    flex: 1;
+    background: #3b82f6;
+    color: white;
+    border: none;
+    padding: 8px;
+    border-radius: 5px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.download-btn:disabled {
+    background: #94a3b8;
+    cursor: not-allowed;
+}
+
+.download-btn:hover:not(:disabled) {
+    background: #2563eb;
+}
+
+@media (max-width: 480px) {
+    .case-actions {
+        flex-direction: column;
+    }
+}

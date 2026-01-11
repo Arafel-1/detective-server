@@ -1,34 +1,7 @@
 // Datos de los casos
-const casesData = [
-    {
-        id: 1,
-        title: "Silencio en el apartamento 804",
-        difficulty: 1,
-        documents: {
-            pistas: [
-                { name: "Audios", file: "audios.pdf" },
-                { name: "Documentos", file: "documentos.pdf" },
-                { name: "Mensajes", file: "mensajes.pdf" }
-            ],
-            declaraciones: [
-                { name: "Declaraciones Formales", file: "declaraciones_formales.pdf" }
-            ],
-            forense: [
-                { name: "Informe Forense", file: "informe_forense.pdf" }
-            ],
-            policial: [
-                { name: "Reporte Policial Inicial", file: "reporte_policial_inicial.pdf" }
-            ]
-        },
-        solution: {
-            declaraciones: "declaraciones_final.pdf",
-            forense: "forense_final.pdf",
-            audios: "audios_final.pdf",
-            documentos: "documentos_final.pdf",
-            mensajes: "mensajes_final.pdf"
-        }
-    }
-];
+// Estado de la aplicación
+let casesData = []; // Se cargará del servidor o caché
+let casesLoaded = false;
 
 // Estado actual de la aplicación
 let currentCase = null;
@@ -140,28 +113,130 @@ function hideAllScreens() {
 }
 
 // Cargar casos en la pantalla de selección
-function loadCases() {
+async function loadCases() {
     const container = document.getElementById('cases-container');
+    container.innerHTML = '<p class="loading-msg">Buscan casos nuevos...</p>';
+
+    // 1. Intentar cargar del servidor si no están cargados
+    if (!casesLoaded) {
+        try {
+            console.log("Solicitando casos al servidor...");
+            const response = await fetch(window.Config.apiUrl('/api/cases'));
+            if (!response.ok) throw new Error("Error red");
+            casesData = await response.json();
+            casesLoaded = true;
+            // Guardar en localStorage como backup rápido
+            localStorage.setItem('cached_cases_meta', JSON.stringify(casesData));
+        } catch (e) {
+            console.warn("No se pudo conectar al servidor. Usando caché local.", e);
+            // Intentar cargar de backup local
+            const cached = localStorage.getItem('cached_cases_meta');
+            if (cached) {
+                casesData = JSON.parse(cached);
+                casesLoaded = true;
+            } else {
+                container.innerHTML = '<p class="error-msg">⚠️ No se pudo conectar al servidor y no hay casos guardados.</p>';
+                return;
+            }
+        }
+    }
+
     container.innerHTML = '';
 
-    casesData.forEach(caseItem => {
+    // 2. Renderizar tarjetas
+    for (const caseItem of casesData) {
         const card = document.createElement('div');
         card.className = 'case-card';
-        card.addEventListener('click', () => showCase(caseItem.id));
+
+        // Verificar si está descargado (offline ready)
+        const isOffline = await checkCaseOfflineStatus(caseItem);
+        const statusIcon = isOffline ? '✅' : '☁️';
+        const statusText = isOffline ? 'Listo para jugar' : 'Requiere descarga';
 
         const stars = generateStars(caseItem.difficulty);
 
         card.innerHTML = `
-            <h3>${caseItem.title}</h3>
+            <div class="case-header">
+                <h3>${caseItem.title}</h3>
+                <span class="status-icon" title="${statusText}">${statusIcon}</span>
+            </div>
             <div class="case-difficulty">
                 ${stars}
             </div>
             <p>Dificultad: ${caseItem.difficulty}/3</p>
+            
+            <div class="case-actions">
+                <button class="play-btn">Jugar</button>
+                ${!isOffline ? `<button class="download-btn" onclick="downloadCase(${caseItem.id}, this)">📥 Descargar</button>` : ''}
+            </div>
         `;
 
+        // Event listener para jugar
+        card.querySelector('.play-btn').addEventListener('click', () => {
+            if (isOffline || navigator.onLine) {
+                showCase(caseItem.id);
+            } else {
+                alert("⚠️ Necesitas conexión a internet para jugar este caso por primera vez, o descárgalo antes.");
+            }
+        });
+
         container.appendChild(card);
-    });
+    }
 }
+
+// Verificar si un caso tiene sus archivos en caché
+async function checkCaseOfflineStatus(caseItem) {
+    if (!('caches' in window)) return false;
+    try {
+        const cache = await caches.open('detective-cases-v1');
+        // Verificamos si existe al menos el reporte policial inicial
+        // Nota: Esto es una verificación rápida. Idealmente verificaríamos todos.
+        const fileToCheck = `assets/casos/caso${caseItem.id}/${caseItem.documents.policial[0].file}`;
+        const match = await cache.match(window.Config.apiUrl(fileToCheck));
+        return !!match;
+    } catch (e) {
+        return false;
+    }
+}
+
+// Descargar caso para uso offline
+window.downloadCase = async (caseId, btn) => {
+    btn.disabled = true;
+    btn.textContent = "⏳ Descargando...";
+
+    const caseItem = casesData.find(c => c.id === caseId);
+    if (!caseItem) return;
+
+    try {
+        const cache = await caches.open('detective-cases-v1');
+        const filesToCache = [];
+        const baseUrl = window.Config.apiUrl(`assets/casos/caso${caseId}/`);
+
+        // Recolectar todos los archivos PDF del caso
+        // Documentos normales
+        Object.values(caseItem.documents).forEach(group => {
+            group.forEach(doc => filesToCache.push(baseUrl + doc.file));
+        });
+        // Solución
+        Object.values(caseItem.solution).forEach(file => {
+            filesToCache.push(baseUrl + file);
+        });
+
+        console.log(`Descargando ${filesToCache.length} archivos para el caso ${caseId}...`);
+
+        // Añadir a caché
+        await cache.addAll(filesToCache);
+
+        btn.textContent = "✅ ¡Listo!";
+        setTimeout(() => loadCases(), 1000); // Recargar UI
+
+    } catch (e) {
+        console.error("Error descargando caso:", e);
+        btn.textContent = "❌ Error";
+        btn.disabled = false;
+        alert("Hubo un error al descargar. Verifica tu internet.");
+    }
+};
 
 // Generar estrellas de dificultad
 function generateStars(difficulty) {

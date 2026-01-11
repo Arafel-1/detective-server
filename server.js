@@ -3,10 +3,43 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 
-const PORT = 8000;
+// Puerto definido al final
+// const PORT = process.env.PORT || 3000;
 
 // Estado del juego en memoria
 const rooms = new Map();
+
+// DATOS DE LOS CASOS (Centralizado)
+const casesData = [
+    {
+        id: 1,
+        title: "Silencio en el apartamento 804",
+        difficulty: 1,
+        documents: {
+            pistas: [
+                { name: "Audios", file: "audios.pdf" },
+                { name: "Documentos", file: "documentos.pdf" },
+                { name: "Mensajes", file: "mensajes.pdf" }
+            ],
+            declaraciones: [
+                { name: "Declaraciones Formales", file: "declaraciones_formales.pdf" }
+            ],
+            forense: [
+                { name: "Informe Forense", file: "informe_forense.pdf" }
+            ],
+            policial: [
+                { name: "Reporte Policial Inicial", file: "reporte_policial_inicial.pdf" }
+            ]
+        },
+        solution: {
+            declaraciones: "declaraciones_final.pdf",
+            forense: "forense_final.pdf",
+            audios: "audios_final.pdf",
+            documentos: "documentos_final.pdf",
+            mensajes: "mensajes_final.pdf"
+        }
+    }
+];
 
 // Utilidades
 const generateRoomId = () => Math.random().toString(36).substring(2, 8).toUpperCase();
@@ -241,6 +274,12 @@ function handleApi(req, res) {
     if (url.pathname === '/api/network-info' && req.method === 'GET') {
         const networkInfo = getNetworkInfo();
         sendJson(networkInfo);
+        return;
+    }
+
+    // 6. OBTENER LISTA DE CASOS (GET /api/cases)
+    if (url.pathname === '/api/cases' && req.method === 'GET') {
+        sendJson(casesData);
         return;
     }
 
