@@ -121,12 +121,38 @@ async function loadCases() {
     if (!casesLoaded) {
         try {
             console.log("Solicitando casos al servidor...");
-            const response = await fetch(window.Config.apiUrl('/api/cases'));
-            if (!response.ok) throw new Error("Error red");
+
+            // Función de fetch con reintentos para manejar "Cold Start" de Render
+            const fetchWithRetry = async (url, retries = 3, delay = 2000) => {
+                for (let i = 0; i < retries; i++) {
+                    try {
+                        const controller = new AbortController();
+                        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout por intento
+
+                        const response = await fetch(url, { signal: controller.signal });
+                        clearTimeout(timeoutId);
+
+                        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                        return response;
+                    } catch (err) {
+                        const isLastAttempt = i === retries - 1;
+                        if (isLastAttempt) throw err;
+
+                        // Si falla, esperar y reintentar (útil si el servidor está despertando)
+                        container.innerHTML = `<p class="loading-msg">⏳ Despertando servidor... (Intento ${i + 1}/${retries})</p>`;
+                        console.log(`Reintentando conexión... (${i + 1})`);
+                        await new Promise(res => setTimeout(res, delay));
+                    }
+                }
+            };
+
+            const response = await fetchWithRetry(window.Config.apiUrl('/api/cases'), 5, 3000); // 5 intentos, 3s espera
             casesData = await response.json();
             casesLoaded = true;
+
             // Guardar en localStorage como backup rápido
             localStorage.setItem('cached_cases_meta', JSON.stringify(casesData));
+
         } catch (e) {
             console.warn("No se pudo conectar al servidor. Usando caché local.", e);
             // Intentar cargar de backup local
@@ -134,8 +160,15 @@ async function loadCases() {
             if (cached) {
                 casesData = JSON.parse(cached);
                 casesLoaded = true;
+                // Mostrar aviso discreto
+                alert("Modo Offline: Usando datos guardados localmente.");
             } else {
-                container.innerHTML = '<p class="error-msg">⚠️ No se pudo conectar al servidor y no hay casos guardados.</p>';
+                container.innerHTML = `
+                    <div class="error-container" style="text-align: center; padding: 20px;">
+                        <p class="error-msg" style="color: #ff6b6b; margin-bottom: 10px;">⚠️ No se pudo conectar al servidor.</p>
+                        <p style="font-size: 0.9rem; color: #ccc;">El servidor podría estar hibernando. Intenta de nuevo en unos segundos.</p>
+                        <button onclick="loadCases()" class="btn-secondary" style="margin-top: 15px;">🔄 Reintentar</button>
+                    </div>`;
                 return;
             }
         }
