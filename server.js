@@ -332,10 +332,7 @@ server.listen(PORT, '0.0.0.0', () => {
     console.log('========================================');
     console.log('  Enigma Files Server (Multijugador)');
     console.log('========================================');
-    console.log(`Servidor de Juego de Detectives corriendo en puerto ${PORT}`);
-    // Note: 'ip' is not defined in this scope. Assuming it's a global or imported variable.
-    // If 'ip' is meant to be from getNetworkInfo, it needs to be handled differently.
-    // For now, keeping the instruction as is.
-    console.log(`Dirección local: http://${ip.address()}:${PORT}`);
+    console.log(`Servidor corriendo en puerto ${PORT}`);
+    console.log(`Endpoint de casos: /api/cases`);
     console.log('========================================');
 });
