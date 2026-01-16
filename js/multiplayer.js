@@ -123,7 +123,7 @@ class MultiplayerSystem {
         this.selectedCaseId = this.caseSelect ? this.caseSelect.value : 1;
 
         try {
-            const response = await fetch('/api/create-room', {
+            const response = await fetch(window.Config.apiUrl('/api/create-room'), {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ playerName: this.playerName })
@@ -146,7 +146,7 @@ class MultiplayerSystem {
         if (!code) return alert('Ingresa un código de sala');
 
         try {
-            const response = await fetch('/api/join-room', {
+            const response = await fetch(window.Config.apiUrl('/api/join-room'), {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ roomId: code, playerName: this.playerName })
