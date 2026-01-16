@@ -311,7 +311,7 @@ function getNetworkInfo() {
         ip = allIps[0]; // Tomamos la primera IP válida encontrada
     }
 
-    return { ip, port: PORT };
+    return { ip, port: 3000 }; // Puerto por defecto, el real se define después
 }
 
 // Limpieza de salas inactivas (cada 30 min)
